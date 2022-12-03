@@ -29,12 +29,4 @@ public class GameButton extends Button {
     public char getColor() {
         return color;
     }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
 }

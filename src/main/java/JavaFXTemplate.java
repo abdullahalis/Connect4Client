@@ -82,7 +82,7 @@ public class JavaFXTemplate extends Application {
 		this.submit = new Button("Submit");
 		submit.setStyle("-fx-font-size: 20px;\n" +
 				"    -fx-font-weight: bold;\n" +
-				"    -fx-background-color: DARKCYAN;\n" +
+				"    -fx-background-color: GAINSBORO;\n" +
 				"    -fx-font-family: 'Didact Gothic';");
 
 		this.portSelect = new VBox(welcome, iView, portText, portField, ipText, ipField, submit);
@@ -111,12 +111,10 @@ public class JavaFXTemplate extends Application {
 						board[moveCol][moveRow - 1].setDisable(false);
 					}
 
-					Boolean won = checkWin(board, x);
-					// send move information
-					clientMessage.getItems().add("Sending back: playernum: " + playerNum + " won: "
-							+ won + " moveRow: " + moveRow + " moveCol: " + moveCol);
+					Boolean won = clientConnection.checkWin(board, x);
+
 					CFourInfo moveInfo = new CFourInfo(true, playerNum, false, won,
-														moveRow, moveCol, true);
+							moveRow, moveCol, true);
 					clientConnection.send(moveInfo);
 				}
 			}
@@ -131,11 +129,6 @@ public class JavaFXTemplate extends Application {
 				Platform.runLater(()-> {
 					clientConnection.cInfo = (CFourInfo) data;
 					CFourInfo cInfo = clientConnection.cInfo;
-
-					clientMessage.getItems().add("Got: playernum: " + clientConnection.cInfo.playerNum + " won: "
-							+ clientConnection.cInfo.won + " moveRow: " + clientConnection.cInfo.moveRow + " moveCol: "
-							+ clientConnection.cInfo.moveCol + " turn: " + clientConnection.cInfo.turn + " gameOver: "
-							+ clientConnection.cInfo.gameOver);
 
 
 					// game hasn't started
@@ -154,8 +147,12 @@ public class JavaFXTemplate extends Application {
 						// update board with other player's turn
 						int lastMoveCol = cInfo.moveCol;
 						int lastMoveRow = cInfo.moveRow;
-						clientMessage.getItems().add("Opponent made a move: row " + lastMoveRow
-										+ ", column " + lastMoveCol);
+						if (lastMoveRow != -1) {
+							clientMessage.getItems().add("Opponent made a move: row " + lastMoveRow
+									+ ", column " + lastMoveCol);
+						}
+						clientMessage.getItems().add("Your turn");
+
 
 						// update board with other player's move
 						if (cInfo.playerNum == 1) {
@@ -174,63 +171,109 @@ public class JavaFXTemplate extends Application {
 					else if (cInfo.twoPlayers){
 						clientMessage.getItems().add("It's the other player's turn");
 					}
-
+					boolean boardFilled = true;
+					for(int i = 0; i < 6; i++){
+						if(board[i][0].getColor() == 'n'){
+							boardFilled = false;
+						}
+					}
+					if(boardFilled){
+						makeTieScene(primaryStage);
+					}
 					// if the game is over
 					if (cInfo.gameOver) {
 						if (cInfo.won) {
 							clientMessage.getItems().add("You won!");
+							int lastMoveCol = cInfo.moveCol;
+							int lastMoveRow = cInfo.moveRow;
+							GameButton x = board[lastMoveCol][lastMoveRow];
+
+							if(clientConnection.checkWin(board, x)){
+								for(int c = 0; c < 7; c++){
+									for(int r = 0; r < 6; r++){
+										board[c][r].setDisable(true);
+									}
+								}
+								if(clientConnection.checkVerticalWin(board, 5, x.getColor(), x.getRow(), x.getCol())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markVerticalWin(board, 5, x.getColor(), x.getRow(), x.getCol());
+									System.out.println("vert win");
+								}
+								else if(clientConnection.checkHorizontalWin(board, 6, x.getColor(), x.getCol(), x.getRow())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markHorizontalWin(board, 6, x.getColor(), x.getCol(), x.getRow());
+									System.out.println("horiz win");
+								}
+								else if(clientConnection.checkAscendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markAscendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol());
+									System.out.println("asc win");
+								}
+								else if(clientConnection.checkDescendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markDescendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol());
+									System.out.println("desc win");
+								}
+								for(int c = 0; c < 7; c++){
+									for(int r = 0; r < 6; r++){
+										board[c][r].setDisable(true);
+									}
+								}
+								x.setStyle("-fx-background-color: CHARTREUSE");
+								markDescendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol());
+								PauseTransition pause = new PauseTransition(Duration.seconds(3));
+								pause.setOnFinished(ev ->
+										makeWinScene(primaryStage, x.getColor()));
+								pause.play();
+							}
 						}
 						else {
 							clientMessage.getItems().add("You lost");
+							clientMessage.getItems().add("You won!");
+							int lastMoveCol = cInfo.moveCol;
+							int lastMoveRow = cInfo.moveRow;
+							GameButton x = board[lastMoveCol][lastMoveRow];
+
+							if(clientConnection.checkWin(board, x)){
+								for(int c = 0; c < 7; c++){
+									for(int r = 0; r < 6; r++){
+										board[c][r].setDisable(true);
+									}
+								}
+								if(clientConnection.checkVerticalWin(board, 5, x.getColor(), x.getRow(), x.getCol())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markVerticalWin(board, 5, x.getColor(), x.getRow(), x.getCol());
+									System.out.println("vert win");
+								}
+								else if(clientConnection.checkHorizontalWin(board, 6, x.getColor(), x.getCol(), x.getRow())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markHorizontalWin(board, 6, x.getColor(), x.getCol(), x.getRow());
+									System.out.println("horiz win");
+								}
+								else if(clientConnection.checkAscendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markAscendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol());
+									System.out.println("asc win");
+								}
+								else if(clientConnection.checkDescendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol())){
+									x.setStyle("-fx-background-color: CHARTREUSE");
+									markDescendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol());
+									System.out.println("desc win");
+								}
+								for(int c = 0; c < 7; c++){
+									for(int r = 0; r < 6; r++){
+										board[c][r].setDisable(true);
+									}
+								}
+								x.setStyle("-fx-background-color: CHARTREUSE");
+								markDescendingWin(board, 5, 6, x.getColor(), x.getRow(), x.getCol());
+								PauseTransition pause = new PauseTransition(Duration.seconds(3));
+								pause.setOnFinished(ev ->
+										makeWinScene(primaryStage, x.getColor()));
+								pause.play();
+							}
 						}
 					}
-
-//					// check if game is over
-//					if (clientConnection.cInfo.gameOver) {
-//						if (clientConnection.cInfo.won) {
-//							clientMessage.getItems().add("You won!");
-//						}
-//						else {
-//							clientMessage.getItems().add("You lost");
-//						}
-//					}
-//					else {
-//						// if only one player joined
-//						if (!clientConnection.cInfo.twoPlayers && !clientConnection.cInfo.gameStarted) {
-//							clientMessage.getItems().add("Waiting for second player to join...");
-//						}
-//						// if two players have joined
-//						else if (clientConnection.cInfo.twoPlayers && clientConnection.cInfo.gameStarted
-//								&& clientConnection.cInfo.moveRow == -1) {
-//							clientMessage.getItems().add("Player found! Starting the game.");
-//						}
-//						// if move has gotten sent from other player
-//						if (clientConnection.cInfo.turn) {
-//							clientMessage.getItems().add("It's your turn");
-//							int lastMoveRow = clientConnection.cInfo.moveRow;
-//							int lastMoveCol = clientConnection.cInfo.moveCol;
-//
-//							// if player 2 made last move
-//							if (clientConnection.cInfo.playerNum == 1) {
-//								board[lastMoveCol][lastMoveRow].setColor('y');
-//								board[lastMoveCol][lastMoveRow].setStyle("-fx-background-color: YELLOW");
-//								if (lastMoveRow != 0) {
-//									board[lastMoveCol][lastMoveRow - 1].setDisable(false);
-//								}
-//							}
-//							// if player 1 made last move
-//							else if (clientConnection.cInfo.playerNum == 2){
-//								board[lastMoveCol][lastMoveRow].setColor('r');
-//								board[lastMoveCol][lastMoveRow].setStyle("-fx-background-color: CRIMSON");
-//								if (lastMoveRow != 0) {
-//									board[lastMoveCol][lastMoveRow - 1].setDisable(false);
-//								}
-//							}
-//						}
-//						else {
-//							clientMessage.getItems().add("It's the other player's turn");
-//						}
-//					}
 
 				});
 			},portNumber, ip);
@@ -261,8 +304,6 @@ public class JavaFXTemplate extends Application {
 
 	// display game screen
 	public void gameScreen(Stage primaryStage) {
-		final boolean[] p1Turn = {true};
-		final boolean[] p2Turn = {false};
 		GridPane grid = new GridPane();
 		board = new GameButton[7][6];
 		clientMessage = new ListView();
@@ -304,166 +345,6 @@ public class JavaFXTemplate extends Application {
 		clientMessage.getItems().add("YOU LOSEEEE");
 	}
 
-	// Win checking
-	public boolean checkVerticalWin(GameButton[][] board, int colMax, char color, int buttonRow, int buttonCol) {
-		int count = 0;
-		for(int i = 1; i < 4; i++) {
-			//going up from curr button
-
-			if (buttonRow - i < 0) {
-				break;
-			}
-			if (board[buttonCol][buttonRow - i].getColor() == color) {
-				count++;
-			} else {
-				break;
-			}
-		}
-		for(int i = 1; i<4; i++){
-			//going up from curr button
-			if(buttonRow+i > colMax){
-
-				break;
-			}
-			if(board[buttonCol][buttonRow+i].getColor() == color){
-				count++;
-			}
-			else{
-				break;
-			}
-		}
-		if(count >=3){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-
-	public boolean checkHorizontalWin(GameButton[][] board, int rowMax, char color, int buttonCol, int buttonRow) {
-		int count = 0;
-		for(int i = 1; i < 4; i++) {
-			//going left from curr button
-			if (buttonCol - i < 0) {
-				//System.out.println((buttonCol - i));
-				break;
-			}
-			if (board[buttonCol- i][buttonRow].getColor() == color) {
-				count++;
-			}
-			else {
-				//System.out.println("broke at" + (buttonCol-i) + "," + buttonRow);
-				break;
-			}
-		}
-		for(int i = 1; i<4; i++){
-			//going right from curr button
-			if(buttonCol+i > rowMax){
-				//System.out.println((buttonCol+i));
-				break;
-			}
-			if(board[buttonCol+i][buttonRow].getColor() == color){
-				count++;
-			}
-			else{
-				//System.out.println("broke at" + (buttonCol+1) +","+ buttonRow);
-				break;
-			}
-		}
-		if(count >=3){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-
-	public boolean checkAscendingWin(GameButton[][] board, int rowMax, int colMax, char color, int currRow, int currCol) {
-		int count = 0;
-		for(int i = 1; i < 4; i++) {
-			//going up from curr button
-			if (currRow+i > rowMax|| currCol - i < 0) {
-				break;
-			}
-			if (board[currCol-i][currRow + i].getColor() == color) {
-				count++;
-			} else {
-				break;
-			}
-		}
-		for(int i = 1; i<4; i++){
-			//going down from curr button
-			if(currRow - i < 0 || currCol +i > colMax){
-				break;
-			}
-			if(board[currCol+i][currRow-i].getColor() == color){
-				count++;
-			}
-			else{
-				break;
-			}
-		}
-		if(count >=3){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-
-	public boolean checkDescendingWin(GameButton[][]board, int rowMax, int colMax, char color, int currRow, int currCol) {
-		int count = 0;
-		for(int i = 1; i < 4; i++) {
-			//going up from curr button
-			if (currRow - i < 0 || currCol - i < 0) {
-				break;
-			}
-			if (board[currCol-i][currRow - i].getColor() == color) {
-				count++;
-			} else {
-				break;
-			}
-		}
-		for(int i = 1; i<4; i++){
-			//going down from curr button
-			if(currRow+i > rowMax|| currCol +i > colMax){
-				break;
-			}
-			if(board[currCol+i][currRow+i].getColor() == color){
-				count++;
-			}
-			else{
-				break;
-			}
-		}
-		if(count >=3){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-
-	// uses players most recent move to efficiently check for a win
-	public boolean checkWin(GameButton[][] board, GameButton button) {
-		int rowMax = 5;
-		int colMax = 6;
-		char color = button.getColor();
-		int buttonRow = button.getRow();
-		int buttonCol = button.getCol();
-
-
-		if (checkVerticalWin(board, rowMax, color, buttonRow, buttonCol) || checkHorizontalWin(board, colMax, color, buttonCol, buttonRow)
-				|| checkAscendingWin(board, rowMax, colMax, color, buttonRow, buttonCol) ||
-				checkDescendingWin(board, rowMax, colMax, color, buttonRow, buttonCol)) {
-			return true;
-		}
-		else {
-			return false;
-		}
-
-	}
-
 	public void markVerticalWin(GameButton[][] board, int colMax, char color, int buttonRow, int buttonCol) {
 		int count = 0;
 		for(int i = 1; i < 4; i++) {
@@ -473,8 +354,8 @@ public class JavaFXTemplate extends Application {
 				break;
 			}
 			if (board[buttonCol][buttonRow - i].getColor() == color) {
-				board[buttonCol][buttonRow - i].setText("X");
-				//board[buttonCol][buttonRow-i].setStyle("-fx-background-color: CHARTREUSE");
+				//board[buttonCol][buttonRow - i].setText("X");
+				board[buttonCol][buttonRow-i].setStyle("-fx-background-color: CHARTREUSE");
 				count++;
 			} else {
 				break;
@@ -495,35 +376,134 @@ public class JavaFXTemplate extends Application {
 			}
 		}
 	}
+
 	public void markHorizontalWin(GameButton[][] board, int rowMax, char color, int buttonCol, int buttonRow) {
 		int count = 0;
-		for(int i = 1; i < 4; i++) {
+		for (int i = 1; i < 4; i++) {
 			//going left from curr button
 			if (buttonCol - i < 0) {
 				//System.out.println((buttonCol - i));
 				break;
 			}
-			if (board[buttonCol- i][buttonRow].getColor() == color) {
-				board[buttonCol-i][buttonRow].setStyle("-fx-background-color: CHARTREUSE");
-			}
-			else {
+			if (board[buttonCol - i][buttonRow].getColor() == color) {
+				board[buttonCol - i][buttonRow].setStyle("-fx-background-color: CHARTREUSE");
+			} else {
 				//System.out.println("broke at" + (buttonCol-i) + "," + buttonRow);
 				break;
 			}
 		}
-		for(int i = 1; i<4; i++){
+		for (int i = 1; i < 4; i++) {
 			//going right from curr button
-			if(buttonCol+i > rowMax){
+			if (buttonCol + i > rowMax) {
 				//System.out.println((buttonCol+i));
 				break;
 			}
-			if(board[buttonCol+i][buttonRow].getColor() == color){
-				board[buttonCol+i][buttonRow].setStyle("-fx-background-color: CHARTREUSE");
-			}
-			else{
+			if (board[buttonCol + i][buttonRow].getColor() == color) {
+				board[buttonCol + i][buttonRow].setStyle("-fx-background-color: CHARTREUSE");
+			} else {
 				//System.out.println("broke at" + (buttonCol+1) +","+ buttonRow);
 				break;
 			}
+		}
+
+	}
+
+	public void markAscendingWin(GameButton[][] board, int rowMax, int colMax, char color, int currRow, int currCol) {
+		int count = 0;
+		for (int i = 1; i < 4; i++) {
+			//going up from curr button
+			if (currRow + i > rowMax || currCol - i < 0) {
+				break;
+			}
+			if (board[currCol - i][currRow + i].getColor() == color) {
+				board[currCol - i][currRow + i].setStyle("-fx-background-color: CHARTREUSE");
+			} else {
+				break;
+			}
+		}
+		for (int i = 1; i < 4; i++) {
+			//going down from curr button
+			if (currRow - i < 0 || currCol + i > colMax) {
+				break;
+			}
+			if (board[currCol + i][currRow - i].getColor() == color) {
+				board[currCol + i][currRow - i].setStyle("-fx-background-color: CHARTREUSE");
+			} else {
+				break;
+			}
+		}
+	}
+
+	public void markDescendingWin(GameButton[][] board, int rowMax, int colMax, char color, int currRow, int currCol) {
+		int count = 0;
+		for (int i = 1; i < 4; i++) {
+			//going up from curr button
+			if (currRow - i < 0 || currCol - i < 0) {
+				break;
+			}
+			if (board[currCol - i][currRow - i].getColor() == color) {
+				board[currCol - i][currRow - i].setStyle("-fx-background-color: CHARTREUSE");
+			} else {
+				break;
+			}
+		}
+		for (int i = 1; i < 4; i++) {
+			//going down from curr button
+			if (currRow + i > rowMax || currCol + i > colMax) {
+				break;
+			}
+			if (board[currCol + i][currRow + i].getColor() == color) {
+				board[currCol + i][currRow + i].setStyle("-fx-background-color: CHARTREUSE");
+			} else {
+				break;
+			}
+		}
+
+	}
+	void makeWinScene(Stage primaryStage, char color){
+		Text winText = new Text();
+		if(clientConnection.cInfo.won){
+			winText.setText("You Win!!!!!");
+		}
+		else {
+			winText.setText("You lost :(");
+		}
+		winText.setStyle("-fx-font-size: 3em");
+		Button playAgain = new Button("Play Again");
+		Button quitBtn = new Button("Quit");
+		quitBtn.setOnAction(e-> Platform.exit());
+		playAgain.setOnAction(e->quit(primaryStage));
+		VBox box = new VBox(10, winText, playAgain, quitBtn);
+		box.setBackground(new Background(new BackgroundFill(Color.DODGERBLUE, new CornerRadii(0), Insets.EMPTY)));
+		box.setAlignment(Pos.CENTER);
+
+		Scene scene = new Scene(box, 700,700);
+		primaryStage.setScene(scene);
+		primaryStage.show();
+	}
+	void makeTieScene(Stage primaryStage){
+		Text tieText = new Text("Neither Player Wins!");
+		tieText.setStyle("-fx-font-size: 3em");
+		Button playAgain = new Button("Play Again");
+		Button quitBtn = new Button("Quit");
+		quitBtn.setOnAction(e-> Platform.exit());
+		playAgain.setOnAction(e->quit(primaryStage));
+		VBox box = new VBox(10, tieText, playAgain, quitBtn);
+		box.setBackground(new Background(new BackgroundFill(Color.DODGERBLUE, new CornerRadii(0), Insets.EMPTY)));
+		box.setAlignment(Pos.CENTER);
+
+		Scene scene = new Scene(box, 700,700);
+		primaryStage.setScene(scene);
+		primaryStage.show();
+	}
+	public void quit(Stage primaryStage) {
+		try {
+			gameScreen(primaryStage);
+			CFourInfo empty = new CFourInfo();
+			empty.restart = true;
+			clientConnection.out.writeObject(empty);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 }

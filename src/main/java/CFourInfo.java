@@ -8,7 +8,9 @@ public class CFourInfo implements Serializable {
     int moveRow;
     int moveCol;
     Boolean gameStarted;
+
     Boolean gameOver;
+    Boolean restart;
 
 
     public CFourInfo() {
@@ -18,9 +20,11 @@ public class CFourInfo implements Serializable {
         won = false;
         moveRow = -1;
         moveCol = -1;
-        gameStarted = true;
+        gameStarted = false;
         gameOver = false;
+        restart = false;
     }
+
 
     public CFourInfo(Boolean twoPlayers, int playerNum, Boolean turn, Boolean won, int moveRow, int moveCol, Boolean gameStarted) {
         this.twoPlayers = twoPlayers;
